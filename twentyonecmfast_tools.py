@@ -167,7 +167,7 @@ def compare_runs(runs, labels=None):
     plt.clf()
     handles = []
     lowk, highk = 0.1, 2.0
-    midz = (parms[0][-1, 0] - parms[0][0, 0]) / 2.0
+    midz = (parms[0][-1, 0] + parms[0][0, 0]) / 2.0
     for run in xrange(nruns):
         plt.subplot(221)
         handles += plt.plot(parms[run][:, 0], parms[run][:, 5], label=labels[run])
