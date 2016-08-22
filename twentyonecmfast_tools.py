@@ -224,9 +224,11 @@ def view_global_xray_runs(dirglob):
     Tbs = []
     for i in xrange(len(Nxu)):
         ind = np.where(Nx == Nxu[i])[0]
-        print ind
         order = np.argsort(Mmin[ind])
-        zs.append(np.array(p[ind[order], 0]))
-        Tbs.append(np.array(p[ind[order], 1]))
+        zs.append([])
+        Tbs.append([])
+        for j in ind[order]:
+            zs[i].append(data[j][0, :])
+            Tbs[i].append(data[j][1, :])
 
     return Nxu, Mminu, zs, Tbs
