@@ -83,11 +83,11 @@ def load_andre_models(fileglob):
         parms = os.path.basename(filename).split('_')
         if parms[0].startswith('reion'):continue
         parm_array.append(map(float,[parms[3][1:],
-                            parms[4][2:], #Nf
-                            parms[6][2:], #Nx
-                            parms[7][-3:], #alphaX
-                            parms[8][5:], #Mmin
-                            parms[9][5:]]))
+                            parms[4][2:],  # Nf
+                            parms[6][5:],  # zetaX
+                            parms[7][-3:],  # alphaX
+                            parms[8][8:],  # TvirminX
+                            parms[9][5:]]))  # aveTb
         D = np.loadtxt(filename)
         k_array.append(D[:,0])
         delta2_array.append(D[:,1])
