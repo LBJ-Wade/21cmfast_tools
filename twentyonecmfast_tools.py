@@ -232,3 +232,52 @@ def view_global_xray_runs(dirglob):
             Tbs[i].append(data[j][1, :])
 
     return Nxu, Mminu, zs, Tbs
+
+
+def view_global_reion_runs(dirglob):
+    # Take fileglob pointing to a series of runs and make some plots to compare them
+    # dirglob should point to the directories within Deldel_T_power_spec output from 21cmfast
+    dirs = glob(dirglob)
+    nruns = len(dirs)
+    Zeta = []
+    Tvir = []
+    mfp = []
+    runs = []
+    data = []
+    for dir in dirs:
+        parms = os.path.basename(dir).split('_')
+        Zeta.append(float(parms[0][4:]))
+        Tvir.append(float(parms[1][4:]))
+        mfp.append(float(parms[2][3:]))
+        runs.append(dir + '/*')  # used to pass to load_andre_models
+        p = load_andre_models(runs[-1])[0]
+        order = np.argsort(p[:, 0])
+        data.append(np.array([p[order, 0], p[order, 1], p[order, 5]]))
+
+    # Now sort parameters
+    Zeta = np.array(Zeta)
+    Tvir = np.array(Tvir)
+    mfp = np.array(mfp)
+    Zetau = np.sort(np.array(list(set(Zeta))))  # Get unique values, convert back to list, then to np array
+    Tviru = np.sort(np.array(list(set(Tvir))))
+    mfpu = np.sort(np.array(list(set(mfp))))
+    zs = []
+    nf = []
+    Tbs = []
+    for i in xrange(len(Zetau)):
+        zs.append([])
+        nf.append([])
+        Tbs.append([])
+        for j in xrange(len(Tviru)):
+            ind = np.where((Zeta == Zetau[i]) & (Tvir == Tviru[j]))[0]
+            order = np.argsort(mfp[ind])
+            zs[i].append([])
+            nf[i].append([])
+            Tbs[i].append([])
+            for k in ind[order]:
+                zs[i][j].append(data[k][0, :])
+                nf[i][j].append(data[k][1, :])
+                Tbs[i][j].append(data[k][2, :])
+
+    nf = np.array([np.array([np.array([np.array(x) for x in y]) for y in z]) for z in nf])
+    return Zetau, Tviru, mfpu, zs, nf, Tbs
