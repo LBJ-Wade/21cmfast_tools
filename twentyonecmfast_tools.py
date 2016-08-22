@@ -195,3 +195,38 @@ def compare_runs(runs, labels=None):
     plt.subplot(224)
     plt.title('Large and Small scale PS')
     plt.semilogy()
+
+
+def view_global_xray_runs(dirglob):
+    # Take fileglob pointing to a series of runs and make some plots to compare them
+    # dirglob should point to the directories within Deldel_T_power_spec output from 21cmfast
+    dirs = glob(dirglob)
+    nruns = len(dirs)
+    Nx = []
+    Mmin = []
+    runs = []
+    data = []
+    for dir in dirs:
+        parms = os.path.basename(dir).split('_')
+        Nx.append(float(parms[0][2:]))
+        Mmin.append(float(parms[1][4:]))
+        runs.append(dir + '/*')  # used to pass to load_andre_models
+        p = load_andre_models(runs[-1])[0]
+        order = np.argsort(p[:, 0])
+        data.append(np.array([p[order, 0], p[order, 5]]))
+
+    # Now sort Nx and Mmin
+    Mmin = np.array(Mmin)
+    Nx = np.array(Nx)
+    Nxu = np.sort(np.array(list(set(Nx))))  # Get unique values, convert back to list, then to np array
+    Mminu = np.sort(np.array(list(set(Mmin))))
+    zs = []
+    Tbs = []
+    for i in xrange(len(Nxu)):
+        ind = np.where(Nx == Nxu[i])[0]
+        print ind
+        order = np.argsort(Mmin[ind])
+        zs.append(np.array(p[ind[order], 0]))
+        Tbs.append(np.array(p[ind[order], 1]))
+
+    return Nxu, Mminu, zs, Tbs
