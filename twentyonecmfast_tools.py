@@ -1,7 +1,6 @@
 import numpy as np, os
 from glob import glob
 from scipy.interpolate import LinearNDInterpolator,interp1d
-from capo import cosmo_units
 from scipy import integrate
 import matplotlib.pyplot as plt
 
