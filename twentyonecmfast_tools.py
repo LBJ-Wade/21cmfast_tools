@@ -3,6 +3,7 @@ from glob import glob
 from scipy.interpolate import LinearNDInterpolator,interp1d
 from scipy import integrate
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 
 def build_model_interp(parm_array,delta2_array,k_array,redshift,
     regrid_ks=None):
@@ -233,8 +234,8 @@ def view_global_xray_runs(dirglob):
     return Nxu, Mminu, zs, Tbs
 
 
-def view_global_reion_runs(dirglob):
-    # Take fileglob pointing to a series of runs and make some plots to compare them
+def get_global_reion_runs(dirglob):
+    # Take fileglob pointing to a series of runs and return relevant global data
     # dirglob should point to the directories within Deldel_T_power_spec output from 21cmfast
     dirs = glob(dirglob)
     nruns = len(dirs)
@@ -278,5 +279,28 @@ def view_global_reion_runs(dirglob):
                 nf[i][j].append(data[k][1, :])
                 Tbs[i][j].append(data[k][2, :])
 
+    zs = np.array([np.array([np.array([np.array(x) for x in y]) for y in z]) for z in zs])
     nf = np.array([np.array([np.array([np.array(x) for x in y]) for y in z]) for z in nf])
+    Tbs = np.array([np.array([np.array([np.array(x) for x in y]) for y in z]) for z in Tbs])
     return Zetau, Tviru, mfpu, zs, nf, Tbs
+
+
+def plot_global_reion_runs(zs, data):
+    # Take data (e.g. from get_global_reion_runs) and plot.
+    nzeta = zs.shape[0]
+    ntvir = zs.shape[1]
+    nmfp = zs.shape[2]
+    plt.figure('Global runs')
+    plt.clf()
+    plt.subplot(131)
+    colors = iter(cm.copper(np.linspace(0, 1, nzeta)))
+    for i in xrange(nzeta):
+        plt.plot(zs[i, ntvir / 2, nmfp / 2, :], data[i, ntvir / 2, nmfp / 2, :], color=next(colors))
+    plt.subplot(132)
+    colors = iter(cm.copper(np.linspace(0, 1, ntvir)))
+    for i in xrange(ntvir):
+        plt.plot(zs[nzeta / 2, i, nmfp / 2, :], data[nzeta / 2, i, nmfp / 2, :], color=next(colors))
+    plt.subplot(133)
+    colors = iter(cm.copper(np.linspace(0, 1, nmfp)))
+    for i in xrange(nmfp):
+        plt.plot(zs[nzeta / 2, ntvir / 2, i, :], data[nzeta / 2, ntvir / 2, i, :], color=next(colors))
