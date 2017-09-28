@@ -4,6 +4,9 @@ from scipy.interpolate import LinearNDInterpolator,interp1d
 from scipy import integrate
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+from astropy.cosmology import WMAP9 as cosmo
+
+f0 = 1420405751.7667  # Hz
 
 def build_model_interp(parm_array,delta2_array,k_array,redshift,
     regrid_ks=None):
@@ -170,7 +173,8 @@ def compare_runs(runs, labels=None):
     midz = (parms[0][-1, 0] + parms[0][0, 0]) / 2.0
     for run in xrange(nruns):
         plt.subplot(221)
-        handles += plt.plot(parms[run][:, 0], parms[run][:, 5], label=labels[run])
+        freqs = f0 / (parms[run][:, 0] + 1) * 1e-6  # MHz
+        handles += plt.plot(freqs, parms[run][:, 5], label=labels[run])
         plt.subplot(222)
         plt.plot(parms[run][:, 0], parms[run][:, 1], label=labels[run])
         plt.subplot(223)
@@ -304,3 +308,57 @@ def plot_global_reion_runs(zs, data):
     colors = iter(cm.copper(np.linspace(0, 1, nmfp)))
     for i in xrange(nmfp):
         plt.plot(zs[nzeta / 2, ntvir / 2, i, :], data[nzeta / 2, ntvir / 2, i, :], color=next(colors))
+
+
+def build_light_cone(fileglob, zs=np.array([6, 6.5, 7]), boxtype='delta_T'):
+    zs = np.array(zs)
+    files = glob(fileglob)
+    zind = {'delta_T': 5, 'Ts_z': 1, 'xH_': 2}
+    zsim = []
+    dims = []
+    lengths = []
+    files_keep = []
+    for f in files:
+        if not os.path.basename(f).startswith(boxtype):
+            continue
+        files_keep.append(f)
+        parms = os.path.basename(f).split('_')
+        zsim.append(np.float(parms[zind[boxtype]][1:]))  # redshifts
+        dims.append(np.int(parms[-2]))  # dim of box
+        lengths.append(np.float(parms[-1][0:-3]))  # length in Mpc
+    files = files_keep
+    if (np.max(np.diff(dims)) > 0) or (np.max(np.diff(lengths)) > 0):
+        raise(ValueError('Boxes are not all the same size'))
+    if (np.max(zs) > np.max(zsim)) or (np.min(zs) < np.min(zsim)):
+        raise(ValueError('Requested redshifts outside range of sim.'))
+    order = np.argsort(zsim)
+    files = [files[i] for i in order]
+    zsim = np.array([zsim[i] for i in order])
+    zsim0 = zsim[0]
+    dim = dims[0]
+    length = lengths[0]
+    dx = length / dim
+
+    lightcube = np.zeros((dim, dim, len(zs)), dtype=np.float32)
+    Ds = cosmo.comoving_distance(zs).value - cosmo.comoving_distance(zsim0).value
+    pix1 = map(int, np.floor(Ds / dx) % dim)
+    wp1 = Ds / dx - np.floor(Ds / dx)
+    pix2 = map(int, np.ceil(Ds / dx) % dim)
+    wp2 = 1 - wp1
+    box1 = [np.argmax(zsim[zsim <= z]) for z in zs]
+    box2 = [i + 1 for i in box1]
+    wb1 = (zs - zsim[box1]) / (zsim[box2] - zsim[box1])
+    wb2 = (zsim[box2] - zs) / (zsim[box2] - zsim[box1])
+
+    for i, z in enumerate(zs):
+        data = np.fromfile(files[box1[i]], dtype=np.float32)
+        data = data.reshape((dim, dim, dim))
+        slice11 = data[:, :, pix1[i]]
+        slice12 = data[:, :, pix2[i]]
+        data = np.fromfile(files[box2[i]], dtype=np.float32)
+        data = data.reshape((dim, dim, dim))
+        slice21 = data[:, :, pix1[i]]
+        slice22 = data[:, :, pix2[i]]
+        lightcube[:, :, i] = (slice11 * wb1[i] * wp1[i] + slice12 * wb1[i] * wp2[i] +
+                              slice21 * wb2[i] * wp1[i] + slice21 * wb2[i] * wp2[i])
+    return lightcube
