@@ -71,7 +71,7 @@ def all_and(arrays):
         out = np.logical_and(out,arr)
     return out
 
-def load_andre_models(fileglob):
+def load_andre_models(fileglob, sortz=True):
     #input a string that globs to the list of input model files
     #return arrays of parameters,k modes, delta2,and delt2 error
     #parm_array expected to be nmodels,nparms
@@ -102,7 +102,15 @@ def load_andre_models(fileglob):
     delta2_array = np.ma.masked_invalid(delta2_array)
     raw_delta2_array = delta2_array.copy()
     delta2_err_array = np.ma.array(delta2_err_array)
+    if sortz:
+        # Sort by redshift
+        order = np.argsort(parm_array[:, 0])
+        parm_array = parm_array[order, :]
+        k_array = k_array[order, :]
+        delta2_array = delta2_array[order, :]
+        delta2_err_array = delta2_err_array[order, :]
     return parm_array,k_array,delta2_array,delta2_err_array
+
 def load_andre_global_models(fileglob):
     #input a string that globs to the list of input model files
     #return a concatenated array of parameters
@@ -313,14 +321,15 @@ def plot_global_reion_runs(zs, data):
 def build_light_cone(fileglob, zs=np.array([6, 6.5, 7]), boxtype='delta_T'):
     zs = np.array(zs)
     files = glob(fileglob)
-    zind = {'delta_T': 5, 'Ts_z': 1, 'xH_': 2}
+    zind = {'delta_T': 5, 'Ts_z': 1, 'xH_': 2, 'deltax': 3}
     zsim = []
     dims = []
     lengths = []
     files_keep = []
     for f in files:
         if not os.path.basename(f).startswith(boxtype):
-            continue
+            if not 'updated_smoothed_' +  boxtype in os.path.basename(f):
+                continue
         files_keep.append(f)
         parms = os.path.basename(f).split('_')
         zsim.append(np.float(parms[zind[boxtype]][1:]))  # redshifts
