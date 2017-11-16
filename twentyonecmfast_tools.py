@@ -182,7 +182,7 @@ def compare_runs(runs, labels=None):
     for run in xrange(nruns):
         plt.subplot(221)
         freqs = f0 / (parms[run][:, 0] + 1) * 1e-6  # MHz
-        handles += plt.plot(freqs, parms[run][:, 5], label=labels[run])
+        handles += plt.plot(parms[run][:, 0], parms[run][:, 5], label=labels[run])
         plt.subplot(222)
         plt.plot(parms[run][:, 0], parms[run][:, 1], label=labels[run])
         plt.subplot(223)
@@ -199,6 +199,7 @@ def compare_runs(runs, labels=None):
     plt.subplot(221)
     plt.title('Tave vs z')
     plt.legend(handles=handles, loc=4)
+    plt.gca().invert_xaxis()
     plt.subplot(222)
     plt.title('Neutral fraction vs z')
     plt.subplot(223)
@@ -356,8 +357,8 @@ def build_light_cone(fileglob, zs=np.array([6, 6.5, 7]), boxtype='delta_T'):
     wp2 = 1 - wp1
     box1 = [np.argmax(zsim[zsim <= z]) for z in zs]
     box2 = [i + 1 for i in box1]
-    wb1 = (zs - zsim[box1]) / (zsim[box2] - zsim[box1])
-    wb2 = (zsim[box2] - zs) / (zsim[box2] - zsim[box1])
+    wb2 = (zs - zsim[box1]) / (zsim[box2] - zsim[box1])
+    wb1 = (zsim[box2] - zs) / (zsim[box2] - zsim[box1])
 
     for i, z in enumerate(zs):
         data = np.fromfile(files[box1[i]], dtype=np.float32)
